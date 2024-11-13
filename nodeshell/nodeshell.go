@@ -15,7 +15,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/kubectl/pkg/util/term"
 	"k8s.io/utils/ptr"
@@ -223,21 +222,4 @@ func (n *NodeShell) RetryClose() {
 		}
 		return
 	}
-}
-
-func buildKubeClient(configPath string) (*kubernetes.Clientset, *rest.Config, error) {
-	rules := clientcmd.NewDefaultClientConfigLoadingRules()
-	rules.ExplicitPath = configPath
-
-	cfg, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, nil).ClientConfig()
-	if err != nil {
-		return nil, nil, fmt.Errorf("read kube config error: %w", err)
-	}
-
-	client, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, nil, fmt.Errorf("create kube client error: %w", err)
-	}
-
-	return client, cfg, nil
 }

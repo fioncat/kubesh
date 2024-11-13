@@ -16,6 +16,12 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var (
+	Version   string = "N/A"
+	Commit    string = "N/A"
+	BuildDate string = "N/A"
+)
+
 func main() {
 	cmd := newCommand()
 
@@ -27,6 +33,7 @@ func main() {
 }
 
 func newCommand() *cobra.Command {
+	var buildInfo bool
 	var opts commandOptions
 
 	cmd := &cobra.Command{
@@ -42,7 +49,16 @@ func newCommand() *cobra.Command {
 			HiddenDefaultCmd: true,
 		},
 
+		Version: Version,
+
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if buildInfo {
+				fmt.Printf("Version: %s\n", Version)
+				fmt.Printf("Commit: %s\n", Commit)
+				fmt.Printf("Build Date: %s\n", BuildDate)
+				return nil
+			}
+
 			if len(args) > 0 {
 				opts.nodeName = args[0]
 			}
@@ -51,11 +67,14 @@ func newCommand() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().BoolVarP(&buildInfo, "build-info", "", false, "show build info")
+
 	cmd.Flags().StringVarP(&opts.configPath, "config", "c", "", "kubesh config file path (default ~/.config/kubesh.yaml)")
 	cmd.Flags().StringVar(&opts.kubeConfigPath, "kubeconfig", "", "kubeconfig file path (default from env $KUBECONFIG and ~/.kube/config)")
 
 	cmd.Flags().BoolVarP(&opts.keepPod, "keep", "k", false, "don't delete shell pod after exit")
 	cmd.Flags().BoolVarP(&opts.killPod, "kill", "K", false, "kill shell pod")
+	cmd.Flags().BoolVarP(&opts.Insecure, "insecure", "i", false, "allow insecure connection to cluster")
 
 	return cmd
 }
@@ -68,6 +87,8 @@ type commandOptions struct {
 
 	configPath     string
 	kubeConfigPath string
+
+	Insecure bool
 
 	kubeClient *kubernetes.Clientset
 	kubeConfig *rest.Config
@@ -145,6 +166,9 @@ func (o *commandOptions) initKubeClient() error {
 	cfg, err := clientcmd.NewNonInteractiveDeferredLoadingClientConfig(rules, nil).ClientConfig()
 	if err != nil {
 		return fmt.Errorf("read kube config error: %w", err)
+	}
+	if o.Insecure {
+		cfg.Insecure = true
 	}
 
 	client, err := kubernetes.NewForConfig(cfg)

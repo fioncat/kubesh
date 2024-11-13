@@ -1,0 +1,6 @@
+image: "uhub.service.ucloud.cn/library/alpine:latest"
+pauseCommand: ["sleep", "infinity"]
+shellCommand: ["bash"]
+
+podNamespace: "kube-system"
+podName: "node-shell-{node}"
